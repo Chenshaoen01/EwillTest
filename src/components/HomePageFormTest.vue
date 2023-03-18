@@ -39,7 +39,8 @@
                       {{item}}
                      </p>
                     </div>
-                    <p v-if="errorMessage.store" class="fs-5">{{ errorMessage.store[0] }}</p>
+                    <p v-if="errorMessage.store" class="fs-5 text-danger">
+                      {{ errorMessage.store[0] }}</p>
                 </label>
                 <!-- 姓名 -->
                 <label for="name" class="form-label w-100 mt-2">
@@ -54,7 +55,8 @@
                     <input type="text"  name="name" id="name" placeholder="placeholder text"
                      class="form-control shadow-none w-100 fs-5 p-3 rounded-4 border-danger"
                      v-if="errorMessage.name" v-model="answerName">
-                    <p v-if="errorMessage.name" class="fs-5">{{ errorMessage.name[0] }}</p>
+                    <p v-if="errorMessage.name" class="fs-5 text-danger">
+                      {{ errorMessage.name[0] }}</p>
                 </label>
                 <!-- 電話 -->
                 <label for="phone" class="form-label w-100 mt-2">
@@ -69,7 +71,8 @@
                     <input type="number" name="phone" id="phone"
                      placeholder="placeholder text" v-model="answerPhone" v-if="errorMessage.phone"
                     class="form-control shadow-none w-100 fs-5 p-3 rounded-4 border-danger">
-                    <p v-if="errorMessage.phone" class="fs-5">{{ errorMessage.phone[0] }}</p>
+                    <p v-if="errorMessage.phone" class="fs-5 text-danger">
+                      {{ errorMessage.phone[0] }}</p>
                 </label>
                 <!-- 數量 -->
                 <label for="amout" class="form-label w-100 mt-2">
@@ -84,7 +87,8 @@
                     <input type="number" name="amout" id="amout" placeholder="placeholder text"
                     class="form-control shadow-none w-100 fs-5 p-3 rounded-4 border-danger"
                      v-model="answerAmout" v-if="errorMessage.amout">
-                    <p v-if="errorMessage.amout" class="fs-5">{{ errorMessage.amout[0] }}</p>
+                    <p v-if="errorMessage.amout" class="fs-5 text-danger">
+                      {{ errorMessage.amout[0] }}</p>
                 </label>
                 <!-- 付款方式 -->
                 <label for="payment" class="form-label w-100">
@@ -111,7 +115,8 @@
                         <option class="option" value="digital payment">digital payment</option>
                         <option class="option" value="ATM">ATM</option>
                     </select>
-                    <p v-if="errorMessage.payment" class="fs-5">{{ errorMessage.payment[0] }}</p>
+                    <p v-if="errorMessage.payment" class="fs-5 text-danger">
+                      {{ errorMessage.payment[0] }}</p>
                 </label>
             </div>
             <!-- 提交按鈕 -->
@@ -145,6 +150,13 @@
 </template>
 
 <style>
+/* 消除 input number 的箭頭 */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .border-focus{
   border-color: #93BBF9;
 }
@@ -184,34 +196,32 @@ export default {
       ],
       storeOption: {
         extended: false,
-        options: [
-          'store1',
-          'store2',
-          'store3',
-          'store4',
-          'store5',
-          'store6',
-          'store7',
-          'store8',
-          'store9',
-          'store10',
-        ],
+        options: [],
       },
     };
   },
+  created() {
+    this.storeOption.options = this.storeDefaultOptions;
+  },
   methods: {
     chooseStore(storeName) {
-      console.log('chooseStore', storeName);
-      this.answerStore = storeName;
+      if (storeName !== 'no result') {
+        this.answerStore = storeName;
+      }
     },
     storeExtended() {
       this.storeOption.extended = true;
     },
     storeInvisible() {
       this.storeOption.extended = false;
+      const BlurTestArr = this.storeDefaultOptions.filter((item) => item === this.answerStore);
+      if (BlurTestArr.length === 0) {
+        this.answerStore = '';
+      }
     },
     validate() {
-      validate.validators.presence.options = { message: '為必填項目' };
+      validate.options = { cleanAttributes: true };
+      validate.validators.presence.options = { message: 'required' };
       const constraints = {
         store: {
           presence: true,
@@ -220,7 +230,7 @@ export default {
           presence: true,
           format: {
             pattern: /^[\u4e00-\u9fa5_a-za-z]+$/,
-            message: '姓名僅限輸入中文及英文',
+            message: 'wrong format',
           },
         },
         phone: {
@@ -229,7 +239,7 @@ export default {
             onlyInteger: true,
             greaterThan: 899999999,
             lessThanOrEqualTo: 999999999,
-            message: '格式錯誤',
+            message: 'wrong format',
           },
         },
         amout: {
@@ -237,29 +247,62 @@ export default {
           numericality: {
             onlyInteger: true,
             greaterThan: 0,
-            message: '數量須大於 0',
+            message: 'wrong format',
           },
         },
         payment: {
           exclusion: {
             within: ['placeholder text'],
-            message: '為必填項目',
+            message: 'required',
           },
         },
       };
 
       //  驗證
       const form = document.getElementById('form');
-      const error = validate(form, constraints);
-      console.log(error);
+      const error = validate(form, constraints, false);
       if (error === undefined) {
-        console.log('success');
         this.validatedOrNot = 'passed';
         this.errorMessage = {};
       } else {
-        console.log('fail');
         this.validatedOrNot = 'failed';
         this.errorMessage = error;
+        if (this.errorMessage.store) {
+          if (this.errorMessage.store[0] === 'Store required') {
+            this.errorMessage.store[0] = 'required';
+          }
+        }
+        if (this.errorMessage.name) {
+          if (this.errorMessage.name[0] === 'Name required') {
+            this.errorMessage.name[0] = 'required';
+          }
+          if (this.errorMessage.name[0] === 'Name wrong format') {
+            this.errorMessage.name[0] = 'wrong format';
+          }
+        }
+        if (this.errorMessage.store) {
+          if (this.errorMessage.phone[0] === 'Phone required') {
+            this.errorMessage.phone[0] = 'required';
+          }
+          if (this.errorMessage.phone[0] === 'Phone wrong format') {
+            this.errorMessage.phone[0] = 'wrong format';
+          }
+        }
+
+        if (this.errorMessage.store) {
+          if (this.errorMessage.amout[0] === 'Amout required') {
+            this.errorMessage.amout[0] = 'required';
+          }
+          if (this.errorMessage.amout[0] === 'Amout wrong format') {
+            this.errorMessage.amout[0] = 'wrong format';
+          }
+        }
+
+        if (this.errorMessage.store) {
+          if (this.errorMessage.payment[0] === 'Payment required') {
+            this.errorMessage.payment[0] = 'required';
+          }
+        }
       }
     },
   },
@@ -275,6 +318,9 @@ export default {
             this.storeOption.options.push(item);
           }
         });
+        if (this.storeOption.options.length === 0) {
+          this.storeOption.options.push('no result');
+        }
       }
     },
   },
